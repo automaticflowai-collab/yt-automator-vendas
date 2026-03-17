@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YT Automator — Seu Canal Postando Sozinho</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red: #FF0000;
+  --red2: #CC0000;
+  --red3: #ff4444;
+  --black: #080808;
+  --dark: #111111;
+  --dark2: #1a1a1a;
+  --dark3: #222222;
+  --white: #FFFFFF;
+  --gray: #888888;
+  --gray2: #555555;
+  --yellow: #FFD700;
+  --green: #00C853;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body: 'Barlow', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--black);
+  color: var(--white);
+  overflow-x: hidden;
+  cursor: default;
+}
+
+/* NOISE OVERLAY */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.3;
+}
+
+/* ── ANNOUNCEMENT BAR ── */
+.announcement {
+  background: var(--red);
+  text-align: center;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  animation: barPulse 3s infinite;
+}
+@keyframes barPulse { 0%,100%{background:var(--red)} 50%{background:var(--red2)} }
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -200px; left: 50%;
+  transform: translateX(-50%);
+  width: 800px; height: 800px;
+  background: radial-gradient(circle, rgba(255,0,0,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-left {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hero-right { display: none; }
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,0,0,0.1);
+  border: 1px solid rgba(255,0,0,0.3);
+  border-radius: 2px;
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--red3);
+  margin-bottom: 28px;
+  animation: fadeUp 0.6s ease both;
+}
+
+.hero-eyebrow::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--red);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(64px, 12vw, 140px);
+  line-height: 0.9;
+  letter-spacing: 2px;
+  margin-bottom: 24px;
+  animation: fadeUp 0.6s 0.1s ease both;
+}
+
+.hero-title .line-red { color: var(--red); display: block; }
+.hero-title .line-white { color: var(--white); display: block; }
+.hero-title .line-outline {
+  -webkit-text-stroke: 2px rgba(255,255,255,0.15);
+  color: transparent;
+  display: block;
+}
+
+.hero-sub {
+  font-size: clamp(16px, 2vw, 20px);
+  color: rgba(255,255,255,0.65);
+  max-width: 560px;
+  line-height: 1.7;
+  animation: fadeUp 0.6s 0.2s ease both;
+}
+
+.hero-sub strong { color: var(--white); }
+
+.hero-cta-group { display: none; }
+.hero-guarantee { display: none; }
+
+.scroll-hint {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gray2);
+  animation: fadeUp 1s 1s ease both;
+}
+
+.scroll-arrow {
+  width: 20px; height: 20px;
+  border-right: 2px solid var(--gray2);
+  border-bottom: 2px solid var(--gray2);
+  transform: rotate(45deg);
+  animation: scrollBounce 1.5s infinite;
+}
+
+@keyframes scrollBounce { 0%,100%{transform:rotate(45deg) translateY(0)} 50%{transform:rotate(45deg) translateY(5px)} }
+
+/* ── BUTTONS ── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--red);
+  color: white;
+  font-family: var(--font-display);
+  font-size: 20px;
+  letter-spacing: 2px;
+  padding: 18px 40px;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.15s, background 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  transition: left 0.4s;
+}
+
+.btn-primary:hover { background: var(--red2); transform: translateY(-2px); }
+.btn-primary:hover::before { left: 100%; }
+.btn-primary:active { transform: translateY(0); }
+
+/* ── FLOATING YT ICONS ── */
+.yt-visual {
+  position: relative;
+  width: 100%;
+  height: 460px;
+}
+
+.yt-logo-svg {
+  position: absolute;
+  filter: drop-shadow(0 12px 40px rgba(255,0,0,0.5));
+}
+
+/* topo esquerda — grande inclinado */
+.yt-logo-svg.pos-a {
+  width: 220px;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -60%) rotate(-8deg);
+  opacity: 0.95;
+  animation: floatA 5s ease-in-out infinite;
+}
+
+/* topo direita — pequeno */
+.yt-logo-svg.pos-b {
+  width: 72px;
+  top: 30px; right: 20px;
+  transform: rotate(10deg);
+  opacity: 0.5;
+  animation: floatB 4s ease-in-out infinite;
+  filter: drop-shadow(0 6px 20px rgba(255,0,0,0.3));
+}
+
+/* baixo direita — médio inclinado */
+.yt-logo-svg.pos-c {
+  width: 110px;
+  bottom: 60px; right: 0;
+  transform: rotate(18deg);
+  opacity: 0.8;
+  animation: floatC 6s ease-in-out infinite;
+}
+
+/* baixo esquerda — muito pequeno */
+.yt-logo-svg.pos-d {
+  width: 50px;
+  bottom: 30px; left: 40px;
+  transform: rotate(-8deg);
+  opacity: 0.35;
+  animation: floatA 7s ease-in-out infinite reverse;
+  filter: drop-shadow(0 4px 12px rgba(255,0,0,0.2));
+}
+
+@keyframes floatA {
+  0%,100% { transform: translate(-50%, -60%) rotate(-8deg) translateY(0); }
+  50% { transform: translate(-50%, -60%) rotate(-8deg) translateY(-18px); }
+}
+@keyframes floatB {
+  0%,100% { transform: rotate(10deg) translateY(0); }
+  50% { transform: rotate(10deg) translateY(-12px); }
+}
+@keyframes floatC {
+  0%,100% { transform: rotate(18deg) translateY(0); }
+  50% { transform: rotate(18deg) translateY(-14px); }
+}
+
+.yt-auto-label {
+  position: absolute;
+  bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0,200,83,0.1);
+  border: 1px solid rgba(0,200,83,0.25);
+  border-radius: 20px;
+  padding: 8px 18px;
+  font-size: 12px;
+  color: var(--green);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.yt-auto-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse 1.5s infinite;
+  flex-shrink: 0;
+}
+
+/* ── PAIN SECTION ── */
+.pain {
+  padding: 100px 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.section-label {
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.pain-title {
+  font-family: var(--font-display);
+  font-size: clamp(36px, 6vw, 64px);
+  line-height: 1;
+  margin-bottom: 48px;
+  letter-spacing: 1px;
+}
+
+.pain-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 2px;
+}
+
+.pain-item {
+  background: var(--dark);
+  padding: 28px 24px;
+  border-left: 3px solid var(--red2);
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: opacity 0.4s, transform 0.4s;
+}
+
+.pain-item.visible { opacity: 1; transform: translateX(0); }
+
+.pain-item-icon { font-size: 28px; margin-bottom: 12px; }
+.pain-item h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+.pain-item p { font-size: 14px; color: var(--gray); line-height: 1.6; }
+
+/* ── SOLUTION ── */
+.solution {
+  padding: 100px 24px;
+  background: var(--dark);
+  position: relative;
+  overflow: hidden;
+}
+
+.solution::before {
+  content: '';
+  position: absolute;
+  bottom: -300px; right: -200px;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(255,0,0,0.08) 0%, transparent 70%);
+}
+
+.solution-inner { max-width: 960px; margin: 0 auto; }
+
+.solution-title {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 7vw, 80px);
+  line-height: 1;
+  letter-spacing: 1px;
+  margin-bottom: 24px;
+}
+
+.solution-title span { color: var(--red); }
+
+.solution-desc {
+  font-size: 18px;
+  color: rgba(255,255,255,0.7);
+  max-width: 600px;
+  line-height: 1.7;
+  margin-bottom: 60px;
+}
+
+/* FLOW DIAGRAM */
+.flow {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 700px;
+}
+
+.flow-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 20px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.4s, transform 0.4s;
+}
+
+.flow-item.visible { opacity: 1; transform: translateY(0); }
+.flow-item:last-child { border-bottom: none; }
+
+.flow-num {
+  width: 36px; height: 36px;
+  background: var(--red);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.flow-content h4 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.flow-content p { font-size: 13px; color: var(--gray); line-height: 1.5; }
+
+.flow-tag {
+  display: inline-block;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 2px;
+  margin-left: 8px;
+  font-weight: 600;
+}
+
+.flow-tag.auto { background: rgba(0,200,83,0.15); color: var(--green); border: 1px solid rgba(0,200,83,0.3); }
+.flow-tag.manual { background: rgba(255,215,0,0.1); color: var(--yellow); border: 1px solid rgba(255,215,0,0.3); }
+
+/* ── COMPARISON ── */
+.comparison {
+  padding: 100px 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  margin-top: 48px;
+}
+
+.compare-col { padding: 32px 28px; }
+.compare-col.before { background: var(--dark2); border-top: 3px solid var(--gray2); }
+.compare-col.after { background: var(--dark); border-top: 3px solid var(--red); }
+
+.compare-header {
+  font-family: var(--font-display);
+  font-size: 24px;
+  letter-spacing: 2px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.compare-col.before .compare-header { color: var(--gray); }
+.compare-col.after .compare-header { color: var(--red); }
+
+.compare-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+
+.compare-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.compare-col.before .compare-list li { color: rgba(255,255,255,0.5); }
+.compare-col.after .compare-list li { color: rgba(255,255,255,0.85); }
+
+.compare-list li::before {
+  flex-shrink: 0;
+  margin-top: 2px;
+  font-size: 14px;
+}
+
+.compare-col.before .compare-list li::before { content: '✗'; color: var(--gray2); }
+.compare-col.after .compare-list li::before { content: '✓'; color: var(--green); font-weight: 700; }
+
+/* ── RESULTS ── */
+.results {
+  padding: 100px 24px;
+  background: var(--dark);
+  text-align: center;
+}
+
+.results-inner { max-width: 900px; margin: 0 auto; }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 2px;
+  margin: 60px 0;
+}
+
+.stat {
+  padding: 40px 24px;
+  background: var(--black);
+  border-top: 3px solid var(--red);
+}
+
+.stat-num {
+  font-family: var(--font-display);
+  font-size: 56px;
+  color: var(--red);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ── WHAT'S INCLUDED ── */
+.included {
+  padding: 100px 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.included-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 2px;
+  margin-top: 48px;
+}
+
+.included-card {
+  background: var(--dark);
+  padding: 32px 28px;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 3px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.included-card:hover { border-bottom-color: var(--red); }
+
+.included-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+}
+
+.card-num {
+  font-family: var(--font-display);
+  font-size: 48px;
+  color: rgba(255,0,0,0.15);
+  position: absolute;
+  top: 16px; right: 20px;
+  line-height: 1;
+}
+
+.card-icon { font-size: 32px; margin-bottom: 16px; }
+.card-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+.card-desc { font-size: 13px; color: var(--gray); line-height: 1.6; }
+
+/* ── PRICING ── */
+.pricing {
+  padding: 100px 24px;
+  background: var(--dark);
+  text-align: center;
+}
+
+.pricing-inner { max-width: 560px; margin: 0 auto; }
+
+.pricing-box {
+  background: var(--black);
+  border: 1px solid rgba(255,0,0,0.3);
+  border-radius: 4px;
+  padding: 48px 40px;
+  margin-top: 48px;
+  position: relative;
+  overflow: hidden;
+}
+
+.pricing-box::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--red);
+}
+
+.pricing-badge {
+  display: inline-block;
+  background: var(--red);
+  color: white;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 2px;
+  margin-bottom: 24px;
+  font-weight: 600;
+}
+
+.pricing-name {
+  font-family: var(--font-display);
+  font-size: 36px;
+  letter-spacing: 3px;
+  margin-bottom: 8px;
+}
+
+.pricing-desc {
+  font-size: 14px;
+  color: var(--gray);
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+
+.price-old {
+  font-size: 18px;
+  color: var(--gray2);
+  text-decoration: line-through;
+  margin-bottom: 4px;
+}
+
+.price-main {
+  font-family: var(--font-display);
+  font-size: 72px;
+  color: var(--white);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.price-main span { font-size: 32px; vertical-align: top; margin-top: 16px; display: inline-block; }
+
+.price-installment {
+  font-size: 13px;
+  color: var(--gray);
+  margin-bottom: 32px;
+}
+
+.pricing-features {
+  list-style: none;
+  text-align: left;
+  margin-bottom: 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pricing-features li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.pricing-features li::before {
+  content: '✓';
+  color: var(--green);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.btn-buy {
+  display: block;
+  width: 100%;
+  background: var(--red);
+  color: white;
+  font-family: var(--font-display);
+  font-size: 24px;
+  letter-spacing: 2px;
+  padding: 20px;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, transform 0.1s;
+  margin-bottom: 16px;
+}
+
+.btn-buy:hover { background: var(--red2); transform: translateY(-1px); }
+
+.btn-buy-sub {
+  font-size: 12px;
+  color: var(--gray);
+  text-align: center;
+}
+
+/* ── FAQ ── */
+.faq {
+  padding: 100px 24px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.faq-item {
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding: 24px 0;
+  cursor: pointer;
+}
+
+.faq-question {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 16px;
+  font-weight: 500;
+  gap: 16px;
+}
+
+.faq-toggle {
+  width: 28px; height: 28px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  transition: background 0.2s;
+  color: var(--gray);
+}
+
+.faq-item.open .faq-toggle { background: var(--red); border-color: var(--red); color: white; }
+
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s;
+  font-size: 14px;
+  color: var(--gray);
+  line-height: 1.7;
+}
+
+.faq-item.open .faq-answer { max-height: 300px; padding-top: 16px; }
+
+/* ── FINAL CTA ── */
+.final-cta {
+  padding: 120px 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.final-cta::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 800px; height: 800px;
+  background: radial-gradient(circle, rgba(255,0,0,0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.final-cta-title {
+  font-family: var(--font-display);
+  font-size: clamp(48px, 8vw, 96px);
+  line-height: 0.95;
+  letter-spacing: 2px;
+  margin-bottom: 24px;
+}
+
+.final-cta-title .accent { color: var(--red); }
+
+.final-cta-sub {
+  font-size: 18px;
+  color: rgba(255,255,255,0.6);
+  max-width: 500px;
+  margin: 0 auto 48px;
+  line-height: 1.6;
+}
+
+/* ── FOOTER ── */
+footer {
+  padding: 40px 24px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  text-align: center;
+  font-size: 12px;
+  color: var(--gray2);
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── STICKY CTA ── */
+.sticky-cta {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--red);
+  color: white;
+  font-family: var(--font-display);
+  font-size: 16px;
+  letter-spacing: 2px;
+  padding: 14px 32px;
+  border-radius: 2px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.3s, background 0.2s;
+  z-index: 100;
+  white-space: nowrap;
+  box-shadow: 0 8px 32px rgba(255,0,0,0.4);
+}
+
+.sticky-cta.visible { transform: translateX(-50%) translateY(0); }
+.sticky-cta:hover { background: var(--red2); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .compare-grid { grid-template-columns: 1fr; }
+  .pricing-box { padding: 32px 24px; }
+  .price-main { font-size: 56px; }
+}
+</style>
+</head>
+<body>
+
+<div class="announcement">
+  ⚡ Oferta de lançamento — vagas limitadas com preço especial
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-eyebrow">Automação YouTube com IA</div>
+    <h1 class="hero-title">
+      <span class="line-white">SEU CANAL</span>
+      <span class="line-red">POSTANDO</span>
+      <span class="line-outline">SOZINHO</span>
+    </h1>
+    <p class="hero-sub">
+      Você cria as músicas no Suno. <strong>O resto? A máquina faz.</strong><br>
+      Vídeo montado, thumbnail, SEO otimizado e publicado no YouTube — quantas vezes você quiser, no horário que definir.
+    </p>
+    <div class="hero-cta-group">
+      <a href="https://pay.kiwify.com.br/U9QFrZX" class="btn-primary">QUERO AUTOMATIZAR MEU CANAL →</a>
+      <span class="hero-guarantee">Acesso imediato após a compra</span>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="yt-visual">
+
+      <!-- logo único centralizado -->
+      <svg class="yt-logo-svg pos-a" viewBox="0 0 90 63" xmlns="http://www.w3.org/2000/svg">
+        <rect width="90" height="63" rx="14" fill="#FF0000"/>
+        <path d="M37 20L62 31.5L37 43V20Z" fill="white"/>
+      </svg>
+
+      <div class="yt-auto-label">
+        <div class="yt-auto-dot"></div>
+        publicando automaticamente
+      </div>
+    </div>
+  </div>
+
+  
+  </div>
+</section>
+
+<!-- PAIN -->
+<section class="pain">
+  <div class="section-label">A realidade de quem cria conteúdo</div>
+  <h2 class="pain-title">VOCÊ SABE CRIAR.<br>O PROBLEMA É O TEMPO.</h2>
+  <div class="pain-grid">
+    <div class="pain-item">
+      <div class="pain-item-icon">⏰</div>
+      <h3>Horas editando vídeo</h3>
+      <p>Montar o mix, ajustar o áudio, adicionar a thumbnail, colocar os capítulos... horas que você não tem.</p>
+    </div>
+    <div class="pain-item">
+      <div class="pain-item-icon">📝</div>
+      <h3>SEO do zero toda semana</h3>
+      <p>Título, descrição, tags, hashtags... cada vídeo precisa de 30-40 minutos só para escrever tudo isso direito.</p>
+    </div>
+    <div class="pain-item">
+      <div class="pain-item-icon">📉</div>
+      <h3>Inconsistência que mata o canal</h3>
+      <p>Uma semana você posta, na outra não. O algoritmo te pune. Os inscritos esquecem que você existe.</p>
+    </div>
+    <div class="pain-item">
+      <div class="pain-item-icon">🧠</div>
+      <h3>Energia no lugar errado</h3>
+      <p>Você é criativo. Mas gasta seu tempo em tarefas repetitivas que uma máquina poderia fazer melhor.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SOLUTION -->
+<section class="solution">
+  <div class="solution-inner">
+    <div class="section-label">A solução</div>
+    <h2 class="solution-title">UMA <span>MÁQUINA</span><br>QUE NUNCA PARA</h2>
+    <p class="solution-desc">
+      O YT Automator é um workflow completo que roda sozinho na frequência que você definir. Você faz uma coisa. A automação faz o resto.
+    </p>
+    <div class="flow">
+      <div class="flow-item">
+        <div class="flow-num">1</div>
+        <div class="flow-content">
+          <h4>Você cria as músicas no Suno <span class="flow-tag manual">você faz</span></h4>
+          <p>Única etapa manual. Cria as músicas, baixa em MP3 e coloca numa pasta do Google Drive.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-num">2</div>
+        <div class="flow-content">
+          <h4>IA pesquisa os vídeos virais <span class="flow-tag auto">automático</span></h4>
+          <p>O sistema busca os 20 vídeos mais assistidos do seu nicho no YouTube para entender o que está bombando.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-num">3</div>
+        <div class="flow-content">
+          <h4>Claude gera letras + SEO completo <span class="flow-tag auto">automático</span></h4>
+          <p>A IA cria 6 letras completas, prompts para o Suno, título viral, descrição com capítulos e 20 tags otimizadas.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-num">4</div>
+        <div class="flow-content">
+          <h4>Vídeo montado com thumbnail <span class="flow-tag auto">automático</span></h4>
+          <p>As músicas são juntadas em um vídeo de 20-40 minutos com sua thumbnail e efeito cinematográfico.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-num">5</div>
+        <div class="flow-content">
+          <h4>Upload no YouTube com SEO <span class="flow-tag auto">automático</span></h4>
+          <p>O vídeo é publicado no seu canal com título, descrição e tags já otimizados — sem você tocar em nada.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON -->
+<section class="comparison">
+  <div class="section-label">Antes vs Depois</div>
+  <h2 class="pain-title">A DIFERENÇA<br>NA PRÁTICA</h2>
+  <div class="compare-grid">
+    <div class="compare-col before">
+      <div class="compare-header">😓 SEM A AUTOMAÇÃO</div>
+      <ul class="compare-list">
+        <li>3-4 horas por vídeo editando e montando</li>
+        <li>Escrever SEO do zero toda semana</li>
+        <li>Publicar na hora errada por falta de tempo</li>
+        <li>Semanas sem postar por sobrecarga</li>
+        <li>Energia gasta em tarefas mecânicas</li>
+        <li>Canal estagnado por inconsistência</li>
+        <li>Você fazendo trabalho de operário</li>
+      </ul>
+    </div>
+    <div class="compare-col after">
+      <div class="compare-header">⚡ COM A AUTOMAÇÃO</div>
+      <ul class="compare-list">
+        <li>Você só cria as músicas — tudo mais é automático</li>
+        <li>SEO otimizado gerado por IA toda semana</li>
+        <li>Publicação automática no horário certo</li>
+        <li>Publica quantos vídeos quiser, no horário que você definir</li>
+        <li>Energia 100% focada em criatividade</li>
+        <li>Canal crescendo com consistência real</li>
+        <li>Você fazendo trabalho de criador</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section class="results">
+  <div class="results-inner">
+    <div class="section-label">Os números</div>
+    <h2 class="pain-title">O QUE A MÁQUINA<br>ENTREGA POR SEMANA</h2>
+    <div class="stats-grid">
+      <div class="stat">
+        <div class="stat-num">∞</div>
+        <div class="stat-label">Vídeos por semana</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">0</div>
+        <div class="stat-label">Horas de edição</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">24h</div>
+        <div class="stat-label">Rodando sozinho</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">100%</div>
+        <div class="stat-label">Automático</div>
+      </div>
+    </div>
+    <p style="font-size:15px; color: var(--gray); max-width: 500px; margin: 0 auto; line-height: 1.7;">
+      Você define a frequência. Diário, 3x por semana, fim de semana — a máquina executa no horário que você programar, <strong style="color:white">sem você precisar fazer nada além de criar as músicas.</strong>
+    </p>
+  </div>
+</section>
+
+<!-- WHAT'S INCLUDED -->
+<section class="included">
+  <div class="section-label">O que você recebe</div>
+  <h2 class="pain-title">TUDO QUE VOCÊ<br>PRECISA PARA RODAR</h2>
+  <div class="included-grid">
+    <div class="included-card">
+      <div class="card-num">01</div>
+      <div class="card-icon">⚡</div>
+      <div class="card-title">Workflow n8n completo</div>
+      <div class="card-desc">O arquivo JSON com toda a automação pronta. Importe no n8n, configure suas chaves e está rodando.</div>
+    </div>
+    <div class="included-card">
+      <div class="card-num">02</div>
+      <div class="card-icon">📖</div>
+      <div class="card-title">Guia de instalação</div>
+      <div class="card-desc">Passo a passo completo para configurar todas as APIs do zero — mesmo quem nunca programou consegue.</div>
+    </div>
+    <div class="included-card">
+      <div class="card-num">03</div>
+      <div class="card-icon">🤖</div>
+      <div class="card-title">Jarvis — Suporte com IA</div>
+      <div class="card-desc">Agente treinado com 2 dias de construção real desta automação. Resolve qualquer erro em segundos.</div>
+    </div>
+    <div class="included-card">
+      <div class="card-num">04</div>
+      <div class="card-icon">♾️</div>
+      <div class="card-title">Atualizações inclusas</div>
+      <div class="card-desc">Qualquer melhoria no workflow você recebe automaticamente. Sem custo adicional.</div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="pricing-inner">
+    <div class="section-label">Investimento</div>
+    <h2 class="pain-title">UM PREÇO.<br>PARA SEMPRE.</h2>
+    <div class="pricing-box">
+      <div class="pricing-badge">Acesso vitalício</div>
+      <div class="pricing-name">YT AUTOMATOR</div>
+      <div class="pricing-desc">Workflow completo + Guia de instalação + Jarvis IA de suporte</div>
+      <div class="price-old">De R$ 697</div>
+      <div class="price-main"><span>R$</span>297</div>
+      <div class="price-installment">ou 3x de R$ 99 sem juros</div>
+      <ul class="pricing-features">
+        <li>Workflow n8n completo e pronto para usar</li>
+        <li>Guia passo a passo de instalação</li>
+        <li>Jarvis — suporte técnico com IA 24/7</li>
+        <li>Funciona com qualquer canal do YouTube</li>
+        <li>Custo de operação: menos de U$5/mês</li>
+        <li>Atualizações gratuitas para sempre</li>
+      </ul>
+      <a href="https://pay.kiwify.com.br/U9QFrZX" class="btn-buy">QUERO AUTOMATIZAR MEU CANAL →</a>
+      <div class="btn-buy-sub">🔒 Pagamento seguro · Acesso imediato</div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq">
+  <div class="section-label">Dúvidas</div>
+  <h2 class="pain-title">PERGUNTAS<br>FREQUENTES</h2>
+
+  <div class="faq-item" onclick="toggleFaq(this)">
+    <div class="faq-question">
+      Preciso saber programar para usar?
+      <div class="faq-toggle">+</div>
+    </div>
+    <div class="faq-answer">Não. O guia de instalação foi criado para quem nunca programou. Se você consegue seguir um tutorial do YouTube, consegue configurar essa automação. O Jarvis (IA de suporte) resolve qualquer dúvida técnica em segundos.</div>
+  </div>
+
+  <div class="faq-item" onclick="toggleFaq(this)">
+    <div class="faq-question">
+      Qual o custo mensal para rodar a automação?
+      <div class="faq-toggle">+</div>
+    </div>
+    <div class="faq-answer">Menos de U$5/mês para a API do Claude. O n8n, Google Drive e Cloudinary são gratuitos para o volume de uso. O Shotstack tem plano gratuito para testes e plano pago (~U$49/mês) para produção em alta qualidade.</div>
+  </div>
+
+  <div class="faq-item" onclick="toggleFaq(this)">
+    <div class="faq-question">
+      Funciona para qualquer nicho de música?
+      <div class="faq-toggle">+</div>
+    </div>
+    <div class="faq-answer">Sim. A automação foi construída para corridos tumbados mas funciona para qualquer nicho de compilação musical. Você adapta o prompt da IA para o seu estilo e canal.</div>
+  </div>
+
+  <div class="faq-item" onclick="toggleFaq(this)">
+    <div class="faq-question">
+      Ainda preciso criar as músicas manualmente?
+      <div class="faq-toggle">+</div>
+    </div>
+    <div class="faq-answer">Sim. A criação das músicas no Suno.com é a única etapa manual — e é onde entra seu toque criativo. Tudo depois disso (montar o vídeo, thumbnail, SEO, publicar) é 100% automático.</div>
+  </div>
+
+  <div class="faq-item" onclick="toggleFaq(this)">
+    <div class="faq-question">
+      E se eu tiver problemas na configuração?
+      <div class="faq-toggle">+</div>
+    </div>
+    <div class="faq-answer">O Jarvis é um agente de IA treinado com 2 dias de construção real desta automação — incluindo todos os erros e soluções encontradas. Você digita o erro e ele resolve. Disponível 24 horas por dia.</div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta">
+  <h2 class="final-cta-title">
+    CHEGA DE<br>FAZER<br><span class="accent">TUDO NA MÃO.</span>
+  </h2>
+  <p class="final-cta-sub">
+    Seu canal merece consistência. Sua criatividade merece foco. A automação cuida do resto.
+  </p>
+  <a href="https://pay.kiwify.com.br/U9QFrZX" class="btn-primary">AUTOMATIZAR MEU CANAL AGORA →</a>
+</section>
+
+<footer>
+  <p>YT Automator · Todos os direitos reservados</p>
+</footer>
+
+<!-- STICKY CTA -->
+<a href="https://pay.kiwify.com.br/U9QFrZX" class="sticky-cta" id="stickyCta">QUERO AUTOMATIZAR MEU CANAL →</a>
+
+<script>
+// Scroll animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.pain-item, .flow-item').forEach(el => observer.observe(el));
+
+// Sticky CTA
+const stickyCta = document.getElementById('stickyCta');
+window.addEventListener('scroll', () => {
+  if (window.scrollY > 600) {
+    stickyCta.classList.add('visible');
+  } else {
+    stickyCta.classList.remove('visible');
+  }
+});
+
+// FAQ
+function toggleFaq(item) {
+  const isOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(f => f.classList.remove('open'));
+  if (!isOpen) item.classList.add('open');
+}
+</script>
+</body>
+</html>
